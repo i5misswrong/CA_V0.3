@@ -19,10 +19,11 @@ public class DrawSecond extends JPanel implements Runnable{
 	public DrawSecond(){
 		int peoNum=120;//行人数量
 		int peoId=1;//行人ID
-		mapMat[30][30]=1000;
 //		---------------------------------
 //		----此处为测试用 在特定位置产生行人-----
-		Peo peo1=new Peo(400,400);
+		//坐标系旋转后 (i,j)i是y  j是x
+		Peo peo1=new Peo(300,400);
+		
 		//Peo peo2=new Peo(0,350);
 		//Peo peo3=new Peo(0,400);
 		//mapMat[8][0]=peoId;
@@ -46,7 +47,7 @@ public class DrawSecond extends JPanel implements Runnable{
 		//t3.start();
 		//t4.start();
 		
-		mapMat[40][40]=peoId;
+		mapMat[7][7]=peoId;
 		
 		peoVector.add(peo1);
 		//peoVector.add(peo2);
@@ -78,7 +79,7 @@ public class DrawSecond extends JPanel implements Runnable{
 //		Thread m1=new Thread(peo01);
 //		m1.start();
 		//viewMat[i][j]  i 朝下  j 朝右
-		viewMat[36][38]=data.viewMatrixNum;
+		viewMat[3][3]=data.viewMatrixNum;
 		peo1.setViewMat(viewMat);
 		
 	}
@@ -102,7 +103,7 @@ public class DrawSecond extends JPanel implements Runnable{
 		//-------绘制行人---------------
 		for(int i=0;i<peoVector.size();i++){
 			Peo peo=peoVector.get(i);
-			this.drawPeo(g, peo.getX(), peo.getY());
+			this.drawPeo(g, peo.getX(), peo.getY()-data.pw);
 		}
 		//--------绘制记忆点---------------
 		this.drawMem(g);
@@ -121,6 +122,7 @@ public class DrawSecond extends JPanel implements Runnable{
 	}
 	public void drawMap(Graphics g){
 		//绘制地图方法
+		
 		g.setColor(Color.black);
 		//绘制中间线条
 		for (int i=1;i<(data.w/data.pw);i++){//竖线
@@ -136,12 +138,12 @@ public class DrawSecond extends JPanel implements Runnable{
 		g2.drawLine(0,0, 0,data.w);
 		g2.drawLine(0,data.w, data.w,data.w);
 		g2.drawLine(data.w,0, data.w,data.w);
-		g2.drawLine(0,0, data.exitX,0);//最上面左边边框
-		g2.drawLine(data.exitX+data.exitL,0, data.w,0);//最上面右边边框
+		g2.drawLine(0,0, data.exitY,0);//最上面左边边框
+		g2.drawLine(data.exitY+data.exitL,0, data.w,0);//最上面右边边框
 	}
 	public void drawPeo(Graphics g,int x,int y){//绘制行人
 			g.setColor(Color.red);
-			g.fill3DRect(x,y, data.pw, data.pw,false);
+			g.fill3DRect(y+data.pw,x, data.pw, data.pw,false);
 	}
 	public void run(){
 		while(true){

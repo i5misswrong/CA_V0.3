@@ -115,7 +115,7 @@ public class peoOld implements Runnable{
 		}
 		else{
 			if(y==0){//上边的墙
-				if(x>data.exitX){//右半部分
+				if(x>data.exitY){//右半部分
 					direction=4;
 				}
 				else{//左半部分
@@ -123,7 +123,7 @@ public class peoOld implements Runnable{
 				}
 			}
 			if(y==data.w-data.pw){//下边的墙
-				if(x>data.exitX){//右半部分
+				if(x>data.exitY){//右半部分
 					direction=6;
 				}
 				else{
@@ -187,7 +187,7 @@ public class peoOld implements Runnable{
 		//如果到达出口  设置为false  如果没到  设置为TRUE
 		boolean flag=true;
 		if(y==0){//是否在上边墙
-			if(x==data.exitX||x==data.exitX+1||x==data.exitX-1){//是否在出口附件
+			if(x==data.exitY||x==data.exitY+1||x==data.exitY-1){//是否在出口附件
 				flag=false;
 			}
 		}
