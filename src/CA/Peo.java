@@ -1,20 +1,29 @@
 package CA;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.Map.Entry;
 
 public class Peo implements Runnable{
 	Data data=new Data();
 	int x;//行人坐标
 	int y;
-	int direction;//行人方向
+	int direction=0;//行人方向
 	int speed=data.speed;//行人速度
 	volatile int mapMat[][];//行人坐标数组 volatile锁死线程
 	int viewMat[][];//记忆点所在位置的矩阵
 	double viewInComeK[][]=new double [data.w/data.pw][data.w/data.pw];//视野收益矩阵
 	double viewInComeK1[][]=new double [data.w/data.pw][data.w/data.pw];//k1下的收益矩阵
 	double viewInComeK2[][]=new double [data.w/data.pw][data.w/data.pw];//k2下的收益矩阵
+	double peoInComeArray[]=new double[9];
+	double peoDirectionInCome[][]=new double[data.w/data.pw][data.w/data.pw];
+	double blankInCome[][]=new double [data.w/data.pw][data.w/data.pw];
+	
 	Vector<Peo> people =new Vector<Peo>();//行人集合
 	Vector<Peo> peoMemPointVector=new Vector<Peo>();
 	Map<Integer,Double> inCome=new HashMap<Integer,Double>();//收益参数
@@ -40,6 +49,7 @@ public class Peo implements Runnable{
 	public void setDirection(int direction) {
 		this.direction = direction;
 	}
+	
 	public int getSpeed() {
 		return speed;
 	}
@@ -52,29 +62,17 @@ public class Peo implements Runnable{
 	public void setMapMat(int[][] mapMat) {
 		this.mapMat = mapMat;
 	}
-	public Vector<Peo> getPeople() {
-		return people;
-	}
-	public void setPeople(Vector<Peo> people) {
-		this.people = people;
-	}
-	public Map<Integer, Double> getInCome() {
-		return inCome;
-	}
-	public void setInCome(Map<Integer, Double> inCome) {
-		this.inCome = inCome;
-	}
-	public Vector<Peo> getPeoMemPointVector() {
-		return peoMemPointVector;
-	}
-	public void setPeoMemPointVector(Vector<Peo> peoMemPointVector) {
-		this.peoMemPointVector = peoMemPointVector;
-	}
 	public int[][] getViewMat() {
 		return viewMat;
 	}
 	public void setViewMat(int[][] viewMat) {
 		this.viewMat = viewMat;
+	}
+	public double[][] getViewInComeK() {
+		return viewInComeK;
+	}
+	public void setViewInComeK(double[][] viewInComeK) {
+		this.viewInComeK = viewInComeK;
 	}
 	public double[][] getViewInComeK1() {
 		return viewInComeK1;
@@ -88,11 +86,41 @@ public class Peo implements Runnable{
 	public void setViewInComeK2(double[][] viewInComeK2) {
 		this.viewInComeK2 = viewInComeK2;
 	}
-	public double[][] getViewInComeK() {
-		return viewInComeK;
+	public double[] getPeoInComeArray() {
+		return peoInComeArray;
 	}
-	public void setViewInComeK(double[][] viewInComeK) {
-		this.viewInComeK = viewInComeK;
+	public void setPeoInComeArray(double[] peoInComeArray) {
+		this.peoInComeArray = peoInComeArray;
+	}
+	public double[][] getPeoDirectionInCome() {
+		return peoDirectionInCome;
+	}
+	public void setPeoDirectionInCome(double[][] peoDirectionInCome) {
+		this.peoDirectionInCome = peoDirectionInCome;
+	}
+	public double[][] getBlankInCome() {
+		return blankInCome;
+	}
+	public void setBlankInCome(double[][] blankInCome) {
+		this.blankInCome = blankInCome;
+	}
+	public Vector<Peo> getPeople() {
+		return people;
+	}
+	public void setPeople(Vector<Peo> people) {
+		this.people = people;
+	}
+	public Vector<Peo> getPeoMemPointVector() {
+		return peoMemPointVector;
+	}
+	public void setPeoMemPointVector(Vector<Peo> peoMemPointVector) {
+		this.peoMemPointVector = peoMemPointVector;
+	}
+	public Map<Integer, Double> getInCome() {
+		return inCome;
+	}
+	public void setInCome(Map<Integer, Double> inCome) {
+		this.inCome = inCome;
 	}
 	//--------------行人移动方法---------------------
 	public void moveLeftUp(){
@@ -646,6 +674,203 @@ public class Peo implements Runnable{
 		}
 		return flag;
 	}
+	
+	//-------------计算与其他行人所产生的方向收益------------
+	public void countOthersPostition(){
+		Map<Integer,Double>peoDirection=new HashMap<Integer,Double>();
+		peoDirection.put(1, 0.0);
+		peoDirection.put(2, 0.0);
+		peoDirection.put(3, 0.0);
+		peoDirection.put(4, 0.0);
+		peoDirection.put(5, 0.0);
+		peoDirection.put(6, 0.0);
+		peoDirection.put(7, 0.0);
+		peoDirection.put(8, 0.0);
+		peoDirection.put(9, 0.0);
+		double va=0.0;
+		int allPeo=0;
+		for(int p=0;p<people.size();p++){
+			//if(othersX>x-data.view & othersX<x+data.view & othersY>y-data.view & othersY<y+data.view){
+
+			if(people.get(p).getDirection()==0){
+				int othersX=people.get(p).getX();
+				int othersY=people.get(p).getY();
+				allPeo++;	
+				int D=judgeOthersDirection(othersX, othersY);
+					switch (D) {
+					case 2:
+						va++;
+						peoDirection.put(2, va);
+						break;
+					case 4:
+						va++;
+						peoDirection.put(4, va);
+						break;
+					case 6:
+						va++;
+						peoDirection.put(6, va);
+						break;
+					case 8:
+						va++;
+						peoDirection.put(8, va);
+						break;
+					default:
+						break;
+					}
+				//}
+			}
+			else{
+				int D=people.get(p).getDirection();
+				switch (D) {
+				case 1:
+					va++;
+					peoDirection.put(1, va);
+					break;
+				case 2:
+					va++;
+					peoDirection.put(2, va);
+					break;
+				case 3:
+					va++;
+					peoDirection.put(3, va);
+					break;
+				case 4:
+					va++;
+					peoDirection.put(4, va);
+					break;
+				case 5:
+					va++;
+					peoDirection.put(5, va);
+					break;
+				case 6:
+					va++;
+					peoDirection.put(6, va);
+					break;
+				case 7:
+					va++;
+					peoDirection.put(7, va);
+					break;
+				case 8:
+					va++;
+					peoDirection.put(8, va);
+					break;
+				case 9:
+					va++;
+					peoDirection.put(9, va);
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		peoInComeArray[0]=(double)peoDirection.get(1)/allPeo;
+		peoInComeArray[1]=(double)peoDirection.get(2)/allPeo;
+		peoInComeArray[2]=(double)peoDirection.get(3)/allPeo;
+		peoInComeArray[3]=(double)peoDirection.get(4)/allPeo;
+		peoInComeArray[4]=(double)peoDirection.get(5)/allPeo;
+		peoInComeArray[5]=(double)peoDirection.get(6)/allPeo;
+		peoInComeArray[6]=(double)peoDirection.get(7)/allPeo;
+		peoInComeArray[7]=(double)peoDirection.get(8)/allPeo;
+		peoInComeArray[8]=(double)peoDirection.get(9)/allPeo;
+	}
+	//判断其他格子位于该行人的上下左右那个方向
+	public int judgeOthersDirection(int OX,int OY){
+		int k1=1;
+		int k2=-1;
+		int y1=k1*(x-OX)+OY;
+		int y2=k2*(x-OX)+OY;
+		int D=0;
+		if(y>=y1 & y>y2){
+			D=2;
+		}
+		else if(y<=y1 & y<y2){
+			D=8;
+		}
+		else if(y>=y2 & y<y1){
+			D=6;
+		}
+		else if(y>=y1 & y<y2){
+			D=4;
+		}
+		return D;
+	}
+	
+	//-------------计算空格收益-----------------
+	public void countBlankInCome(){
+		for(int p=0;p<people.size();p++){
+			int othersX=people.get(p).getX();
+			int othersY=people.get(p).getY();
+			for(int i=0;i<data.w/data.pw;i++){
+				for (int j=0;j<data.w/data.pw;j++){
+					blankInCome[i][j]=1;
+				}
+			}
+			if(othersX==x & othersY==y){
+				blankInCome[othersX/data.pw][othersY/data.pw]=0;
+			}
+			blankInCome[othersX/data.pw][othersY/data.pw]=-30;
+		}
+	}
+	
+	//-----------计算总收益---------------
+	public int countAllInCome(){
+		//计算视野收益
+		for (int i=0;i<data.w/data.pw;i++){
+			for (int j=0;j<data.w/data.pw;j++){
+				double k=countPeoAndExit();
+				double k1=countClockWise(k);
+				double k2=countAntiClockWise(k);
+				countAngleAndNearbyGrid(k1);
+				countAngleAndNearbyGridK2(k2);
+				if(viewInComeK1[i][j]!=0 & viewInComeK2[i][j]!=0){
+					viewInComeK[i][j]=viewInComeK1[i][j]+viewInComeK2[i][j]-1;
+				}
+				else if(isCompleteInAngle(k1, k2, i, j)){
+					viewInComeK[i][j]=1;
+				}
+				else {
+					viewInComeK[i][j]=viewInComeK1[i][j]+viewInComeK2[i][j];
+				}
+			}
+		}
+		//计算空格收益
+		countBlankInCome();
+		//计算行人方向收益
+		countOthersPostition();
+		//-----将收益加起来---------------
+		inCome.put(1, (viewInComeK[x/data.pw-1][y/data.pw-1]+blankInCome[x/data.pw-1][y/data.pw-1]+peoInComeArray[0])*10);
+		inCome.put(2, (viewInComeK[x/data.pw-1][y/data.pw]+blankInCome[x/data.pw-1][y/data.pw]+peoInComeArray[1])*10);
+		inCome.put(3, (viewInComeK[x/data.pw-1][y/data.pw+1]+blankInCome[x/data.pw-1][y/data.pw+1]+peoInComeArray[2])*10);
+		inCome.put(4, (viewInComeK[x/data.pw][y/data.pw-1]+blankInCome[x/data.pw][y/data.pw-1]+peoInComeArray[3])*10);
+		inCome.put(5, (viewInComeK[x/data.pw][y/data.pw]+blankInCome[x/data.pw][y/data.pw]+peoInComeArray[4])*10);
+		inCome.put(6, (viewInComeK[x/data.pw][y/data.pw+1]+blankInCome[x/data.pw][y/data.pw+1]+peoInComeArray[5])*10);
+		inCome.put(7, (viewInComeK[x/data.pw+1][y/data.pw-1]+blankInCome[x/data.pw+1][y/data.pw-1]+peoInComeArray[6])*10);
+		inCome.put(8, (viewInComeK[x/data.pw+1][y/data.pw]+blankInCome[x/data.pw+1][y/data.pw]+peoInComeArray[7])*10);
+		inCome.put(9, (viewInComeK[x/data.pw+1][y/data.pw+1]+blankInCome[x/data.pw+1][y/data.pw+1]+peoInComeArray[8])*10);
+		//对总收益排序
+		Comparator<Map.Entry<Integer, Double>> valueComparator = new Comparator<Map.Entry<Integer,Double>>() {
+	        
+			public int compare(Entry<Integer, Double> o1,
+	                Entry<Integer, Double> o2) {
+	            // TODO Auto-generated method stub
+	            return (int) (o1.getValue()-o2.getValue());
+	        }
+	    };
+	    // map转换成list进行排序
+	    List<Map.Entry<Integer, Double>> list = new ArrayList<Map.Entry<Integer,Double>>(inCome.entrySet());
+	    // 排序
+	    Collections.sort(list,valueComparator);
+	    // 默认情况下，TreeMap对key进行升序排序
+	    //System.out.println("------------map按照value升序排序--------------------");
+	    int a=0;
+	    double b=0.0;
+	    for (Entry<Integer, Double> entry : list) {
+	        a=entry.getKey();
+	        b=entry.getValue();
+	    }
+	    return a;
+	}
+	
 	public void run(){
 		int memPointX[]=new int [data.memPointNum];
 		int memPointY[]=new int [data.memPointNum];
@@ -693,42 +918,7 @@ public class Peo implements Runnable{
 			//System.out.println("---------------");
 			
 			
-			for (int i=0;i<data.w/data.pw;i++){
-				for (int j=0;j<data.w/data.pw;j++){
-					double k=countPeoAndExit();
-					double k1=countClockWise(k);
-					double k2=countAntiClockWise(k);
-					countAngleAndNearbyGrid(k1);
-					countAngleAndNearbyGridK2(k2);
-					if(viewInComeK1[i][j]!=0 & viewInComeK2[i][j]!=0){
-						viewInComeK[i][j]=viewInComeK1[i][j]+viewInComeK2[i][j]-1;
-						
-					}
-					else if(isCompleteInAngle(k1, k2, i, j)){
-						viewInComeK[i][j]=1;
-						
-					}
-					else {
-						viewInComeK[i][j]=viewInComeK1[i][j]+viewInComeK2[i][j];
-						if(i== 5 & j==8){
-							System.out.println(viewInComeK1[i][j]+"***"+viewInComeK2[i][j]);
-						}
-					}
-					
-					
-					if(viewInComeK[i][j]!=0){
-						System.out.println(i+"----"+j+"---"+viewInComeK[i][j]);
-					}
-					
-				}
-			}
-		
-			
-			try {
-	            Thread.sleep(1000);
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
+			System.out.println(countAllInCome()+"this is finial result");
 		}
 //		}
 			
